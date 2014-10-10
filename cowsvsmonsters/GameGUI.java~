@@ -1,0 +1,25 @@
+/** 
+* FILE NAME: GameGUI.java
+* Ashley Thomas and Leah Ferguson
+* Final Project
+*/
+import javax.swing.JFrame;
+
+public class GameGUI {
+
+  public static void main (String[] args) {
+    // creates and shows a Frame 
+    JFrame frame = new JFrame("Game");
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    
+    //create an instance of the GradSchools class
+    Game game = new Game();
+    
+    //create a panel, and add it to the frame
+    GamePanel panel = new GamePanel(game);
+    frame.getContentPane().add(panel);
+    
+    frame.pack();
+    frame.setVisible(true);
+  }
+}

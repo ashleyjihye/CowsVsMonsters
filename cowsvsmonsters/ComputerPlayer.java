@@ -1,0 +1,215 @@
+/**
+ * FILE NAME: ComputerPlayer.java
+ * WHO: Leah Ferguson and Ashley Thomas
+ * WHAT: This class implements the algorithms for the computer player, including moving scared cows to the most
+ * strategic location, killing a cow strategically, guessing a monster based on the number of times it has been
+ * scared, and so forth.
+ */
+
+import java.util.*;
+
+public class ComputerPlayer {
+  
+  private GameBoard gameBoard;
+  
+  //This is the most possible number of spaces on the gameboard that a cow can be adjacent to
+  private final int MAX_ADJACENCIES = 6;
+  
+  /**Constructor
+    * Creates a ComputerPlayer object associated with a certain instance of GameBoard.
+    * @param gameBoard Takes an instance of a GameBoard.
+    */
+  public ComputerPlayer(GameBoard gameBoard) {
+    this.gameBoard = gameBoard;
+  }
+  
+  /**
+   * To guess a monster, the computer determines the group of cows that have been scared the
+   * most number of times and chooses a random cow from that group to guess.
+   * @param numTimesScared Takes in a LinkedList of Linked Lists storing how many times each cow has been scared.
+   * @return Return the index of the cow the computer chooses to guess.
+   */
+  public int guessMonster(LinkedList<LinkedList<String>> numTimesScared){
+    LinkedList<LinkedList<String>> numberTimesScared = numTimesScared;
+    LinkedList<String> mostTimesScared = numberTimesScared.getLast();
+    //If there are no cows in the last list in numberTimesScared, remove the last list and get the new last list.
+    while (mostTimesScared.isEmpty()){          //didn't use helper method because LinkedList<Type> is different
+      numberTimesScared.removeLast();
+      mostTimesScared = numberTimesScared.getLast();
+    }
+    Random rand = new Random();
+    //name is a String representing the cow the computer randomly chose
+    String name = mostTimesScared.get(rand.nextInt(mostTimesScared.size())); //choose a random cow to kill from mostTimesScared
+    int index = gameBoard.getIndexWithName(name);
+    gameBoard.getCow(index).die();
+    return index;
+  }
+  
+  /**
+   * At the beginning of the game, the computer moves 5-10 cows randomly.
+   * @return Returns a string indicating how many cows the computer moved.
+   */
+  public String randomlyMoveCows(){
+    Random rand = new Random(); 
+    LinkedList<Integer> allLivingCows = gameBoard.getAllLivingCows();  
+    int i;
+    for(i=0; i < rand.nextInt(5) + 5; i++) {
+      gameBoard.randomlyMoveCow(allLivingCows.get(rand.nextInt(allLivingCows.size()))); //move a random cow to a random empty space
+      allLivingCows = gameBoard.getAllLivingCows();  
+    }
+    return "JEF moved " + i + " cows. ";
+  }
+  
+  /**
+   *The computer determines the cows that are adjacent to the most number of cows and
+   *adjacent to the second to most number of cows and chooses three random cows from these two groups.
+   * @return Returns that the computer chose 3 monsters.
+   */  
+  public String chooseMonsters() {
+    LinkedList<LinkedList<Integer>> allAdjacencies = removeEmptyLists(getAllAdjacencies(gameBoard.getAllLivingCows()));
+    Random rand = new Random();
+    LinkedList<Integer> topTwoAdjacencies = allAdjacencies.removeLast();
+    allAdjacencies = removeEmptyLists(allAdjacencies);
+    topTwoAdjacencies.addAll(allAdjacencies.removeLast());
+    for (int j = 0; j < 3; j++) {
+      int index = topTwoAdjacencies.remove(rand.nextInt(topTwoAdjacencies.size())); //choose a random cow to be a monster from topTwoAdjacencies
+      gameBoard.getCow(index).becomeMonster();
+      if (topTwoAdjacencies.size() == 0) {
+        allAdjacencies = removeEmptyLists(allAdjacencies);
+        topTwoAdjacencies.addAll(allAdjacencies.removeLast());
+      }
+    }
+    return "JEF chose 3 monsters.";
+  }
+  
+  /**
+   * Helper method that removes any empty lists from the end of a LinkedList<LinkedList<Integer>>
+   * @param aList A LinkedList<LinkedList<Integer>> that may have empty LinkedList<Integer> at its end
+   * @return Returns the updated LinkedList<LinkedList<Integer>>.
+   */  
+  private LinkedList<LinkedList<Integer>> removeEmptyLists(LinkedList<LinkedList<Integer>> aList){
+    while (aList.getLast().isEmpty()){
+      aList.removeLast();
+    }
+    return aList;
+  }
+  
+  /**
+   *The computer determines the cows that are adjacent to most other cows and randomly kills one.
+   * @return Returns the index of the cow that it killed
+   */  
+  public int killCow(){
+    LinkedList<LinkedList<Integer>> allAdjacencies = removeEmptyLists(getAllAdjacencies(gameBoard.getCowsAdjacentToMonsters()));
+    Random rand = new Random();
+    LinkedList<Integer> maxAdjacencies = allAdjacencies.removeLast();
+    int index = maxAdjacencies.remove(rand.nextInt(maxAdjacencies.size())); //choose a random cow to kill from maxAdjacencies
+    gameBoard.getCow(index).die();
+    return index;
+  }
+  
+  /**
+   * The computer moves a cow to an random empty spot adjacent to the greatest possible number of other cows.
+   * @param index Takes in the index of the cow to be moved
+   */  
+  public void moveScaredCow(int index){
+    LinkedList<LinkedList<Integer>> allAdjacencies = removeEmptyLists(getAllAdjacencies(gameBoard.getAllEmptySpaces()));
+    Random rand = new Random();
+    LinkedList<Integer> maxAdjacencies = allAdjacencies.removeLast();
+    int index1 = maxAdjacencies.remove(rand.nextInt(maxAdjacencies.size())); //choose a random space to move a cow to from maxAdjacencies
+    gameBoard.moveCow(index,index1);
+  }
+  
+  /**
+   * This helper method takes in a LinkedList<Integer> and finds the number of cows each vertex is adjacent to
+   * @param aList Takes in a list containing indices of vertices
+   * @return Returns a LinkedList<LinkedList<Integer>> where each index of the outer LinkedList is the number of adjacencies
+   * and the inner LinkedList<Integer> contains the indices of the vertices that have that number of adjacencies
+   */  
+  private LinkedList<LinkedList<Integer>> getAllAdjacencies(LinkedList<Integer> aList){
+    LinkedList<LinkedList<Integer>> allAdjacencies = new LinkedList<LinkedList<Integer>>();
+    for (int k = 0; k <= MAX_ADJACENCIES; k++) {
+      allAdjacencies.add(new LinkedList<Integer>());
+    }
+    for (int i = 0; i < aList.size(); i++) {
+      int adjacency = gameBoard.cowsAdjacentTo(aList.get(i)).size();
+      allAdjacencies.get(adjacency).add(aList.get(i));
+    }
+    return allAdjacencies;
+  }
+  
+  public static void main(String[] args){
+    System.out.println("Creating a GameBoard");
+    GameBoard gameBoard = new GameBoard();
+    System.out.println(gameBoard);
+    System.out.println("Creating a new ComputerPlayer with the GameBoard as the parameter");
+    ComputerPlayer computerPlayer = new ComputerPlayer(gameBoard);
+    System.out.println("Testing randomlyMoveCows()");
+    System.out.println("The cows should be in different positions than before");
+    computerPlayer.randomlyMoveCows();
+    System.out.println(gameBoard);
+    System.out.println("Testing killCow()");
+    System.out.println("Placing three monsters at indices 0, 1 and 2");
+    gameBoard.getCow(0).becomeMonster();
+    gameBoard.getCow(1).becomeMonster();
+    gameBoard.getCow(2).becomeMonster();
+    LinkedList<LinkedList<Integer>> allAdjacencies = 
+      computerPlayer.removeEmptyLists(computerPlayer.getAllAdjacencies(gameBoard.getAllLivingCows()));
+    System.out.println("These are the cows with the most adjacencies: " + allAdjacencies.getLast());
+    computerPlayer.killCow();
+    for (int i=0; i<=23; i++){
+      if (gameBoard.getCow(i).isDead()){
+         System.out.println("The cow at index " + i + " was killed");
+      }
+    }
+    System.out.println("The chosen cow should be randomly selected from the last list in allAdjacencies");
+    System.out.println("Resetting gameBoard\n");
+    gameBoard.resetBoard();
+    System.out.println("Testing guessMonster()");
+    System.out.println("Creatind a LinkedList<LinkedList<String>> numTimesScared to represent the number of times cows " + 
+                       "have been scared");
+    LinkedList<LinkedList<String>> numTimesScared = new LinkedList<LinkedList<String>>();
+    LinkedList<String> scaredZeroTimes = new LinkedList<String>();
+    scaredZeroTimes.add("4");
+    scaredZeroTimes.add("5");
+    LinkedList<String> scaredOnce = new LinkedList<String>();
+    scaredOnce.add("6");
+    scaredOnce.add("7");
+    numTimesScared.add(scaredZeroTimes);
+    numTimesScared.add(scaredOnce);
+    System.out.println("numTimesScared: " + numTimesScared);
+    computerPlayer.guessMonster(numTimesScared);
+    for (int i=0; i<=23; i++){
+      if (gameBoard.getCow(i).isDead()){
+        System.out.println("The cow at index " + i + " was guessed");
+      }
+    }
+    System.out.println("The chosen cow should be randomly selected from the last list in allAdjacencies\n");
+    System.out.println("Testing chooseMonsters()");
+    System.out.println("Creating a LinkedList<LinkedList<Integer>> representing the adjacencies of all living cows");
+    LinkedList<LinkedList<Integer>> allAdjacencies1 = 
+      computerPlayer.removeEmptyLists(computerPlayer.getAllAdjacencies(gameBoard.getAllLivingCows()));
+    System.out.println("allAdjacencies: " + allAdjacencies1);
+    String message = computerPlayer.chooseMonsters();
+    for (int i=0; i<=23; i++){
+      if (gameBoard.getCow(i).isMonster()){
+        System.out.println("The cow at index " + i + " is now a monster");
+      }
+    }
+    System.out.println("The chosen cows should be randomly selected from the last two lists in allAdjacencies");
+    System.out.println("Resetting gameBoard\n");
+    gameBoard.resetBoard();
+    System.out.println("Testing moveScaredCow()");
+    //System.out.println("Make the cow at index 0 scared");
+    //gameBoard.getCow(0).becomeScared();
+    System.out.println("Creating a LinkedList<LinkedList<Integer>> representing the adjacencies of all empty spaces");
+    LinkedList<LinkedList<Integer>> allAdjacencies2 = 
+      computerPlayer.removeEmptyLists(computerPlayer.getAllAdjacencies(gameBoard.getAllEmptySpaces()));
+    System.out.println("allAdjacencies: " + allAdjacencies2);
+    System.out.println("moveScaredCow(0)");
+    computerPlayer.moveScaredCow(0);
+    System.out.println("New location of cow with name \"0\": " + gameBoard.getIndexWithName("0"));
+    System.out.println("New location should be in the last list of allAdjacencies");
+    
+  }
+
+}

@@ -1,0 +1,19 @@
+Labor Plan
+
+AdjMatGraphPlus.java - already written
+BackgroundPanel.java - taken from internet with Orit's permission
+ComputerPlayer.java - written together
+Cow.java - Ashley
+Game.java - written together
+GameBoard.java - written together
+GameGUI.java - written together
+GamePanel.java - written together
+  Formatting of GUI - Ashley
+GraphPlus.java - already written
+Player.java - written together
+
+Debugging - done together
+Local testing - Leah
+
+User Manual - written together
+Technical Guide - written together
